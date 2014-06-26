@@ -1,0 +1,215 @@
+
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style>
+    a:link {
+      color:yellow;
+    }
+      body {
+        margin: 0px;
+        padding: 0px;
+        width: 1500;
+        height: 1500;
+        color:white;
+      }
+      div {
+          text-align:justify;
+          text-justify:inter-word;
+        }
+    </style>
+  </head>
+  <body bgcolor="black">
+    <center>
+    <div id="header" style="width:900px">
+      <p style="font-family:Veranda; font-size:14pt; font-color:white">
+      <u>Project synopsis</u>: Politicians are full of hot air. Wouldnt it be neat if we could call BS on them in real time?<br>
+      The ultimate goal of the project is real-time voice based fact checking.  Politico JoeBlo says "When I get elected as
+      benevolent dictator of the universe, everyone shall have a kitten!" JoeBlo's statement is analyzed and then checked against an
+      online database. During the course of a speech or debate many more statements are collected, ultimately displayed
+      below, color coded to how true (green) or false (red) they are.  Of course few things are so black and white (eh-hem, green and red)
+      so statements that fall in the middle are yellow or orange.  Double clicking on a statement takes you to the fact check database to 
+      read all about it. The dataset used for this example is the 2012 US presidential debates <br><br>
+      <u>Technologies</u>: <a href="http://en.wikipedia.org/wiki/Natural_language_processing">NLP</a>, C#, Javascript, KineticJS<br><br>
+      <u>Usage</u>: Double-click statements to pull up the relevant article from Politifact.
+      </p>
+    </div>
+    </center>
+    <div id="container"></div>
+    <script src="kinetic-v5.0.1.min.js"></script>
+    <script>
+      var initFontSize = 0;
+      function addNode(obj, layer) {
+        var node = new Kinetic.Circle({
+          x : obj.x,
+          y : obj.y,
+          radius : 4,
+          fill : obj.color,
+          id : obj.id
+        });
+
+        layer.add(node);
+      }
+
+      function addText(obj, layer) {
+        var node = new Kinetic.Text({
+          text : obj.text,
+          x : obj.x,
+          y : obj.y,
+          fontFamily : 'Calibri',
+          fontSize : 20,
+          padding : 5,
+          opacity : 0.5,
+          fill : obj.color,
+          align:'left',
+          visible : true
+        });
+        layer.add(node);
+      }
+
+      function addUrl(obj, layer) {
+        var node = new Kinetic.Text({
+          text : obj.url,
+          x : obj.x,
+          y : obj.y,
+          fontFamily : 'Calibri',
+          fontSize : 20,
+          padding : 5,
+          Opacity : 0.5,
+          textFill : 'transparent',
+          visible : true,
+        });
+        layer.add(node);
+      }
+
+      function openNewBackgroundTab(url) {
+        var a = document.createElement("a");
+        a.href = url;
+        var evt = document.createEvent("MouseEvents");
+        //the tenth parameter of initMouseEvent sets ctrl key
+        evt.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, true, false, false, false, 0, null);
+        a.dispatchEvent(evt);
+      }
+
+      var stage = new Kinetic.Stage({
+        container : 'container',
+        width : 1300,
+        height : 1000
+      });
+
+      var topLayer = new Kinetic.Layer();
+      var tooltipLayer = new Kinetic.Layer();
+      var tooltip = new Kinetic.Text({
+        text : '',
+        fontFamily : 'Calibri',
+        fontSize : 12,
+        padding : 5,
+        fill : 'black',
+        opacity : 0.75,
+        textFill : 'white',
+        visible : false
+      });
+
+      tooltipLayer.add(tooltip);
+      // build data
+      var data = [];
+      var width = stage.getWidth();
+      var height = stage.getHeight();
+      var numFacts = 13;
+      var texts = [
+      'Governor Romneys central economic plan calls for a  5 trillion tax cut', 
+      'The president said hed cut the deficit in half unfortunately he doubled it',
+      'Ive put forward a specific  4 trillion deficit reduction plan',
+      'Now if you take such an unbalanced approach then that means you are going to be gutting our investments in schools',
+      'And in one year you provided  90 billion in breaks to the green energy world',
+      'It cuts  716 billion from Medicare to pay for it',
+      'I do not believe in cutting our military I believe in maintaining the strength of Americas military',
+      'Production on government land of oil is down 14 percent',
+      'Governor Romney ... would plan to reduce the tax rates for all the tax brackets and ... eliminate some deductions in order to make up for the loss in revenue',
+      'Thats math that doesnt add up',
+      'Weve gone from  10 trillion of national debt to  16 trillion of national debt',
+      'It took the president 14 days before he called the attack in Benghazi an act of terror',
+      'He said behind closed doors that 47 percent of the country considers themselves victims who refuse personal responsibility',
+      'As a matter of fact Latin Americas economy is almost as big as the economy of China',
+      'And then you cut education spending when you came into office',
+      
+      ];
+      
+      //var urls = ['http://www.cnn.com', 'http://www.opb.org', 'http://www.intel.com', 'http://www.nytimes.com']
+      var colors = ['yellow', 'green', 'yellow', 'orange', 'red', 'yellow', 'green','yellow','orange','yellow','red','yellow', 'green', 'yellow', 'yellow'];
+      var factsAndUrls = {
+        'Governor Romneys central economic plan calls for a  5 trillion tax cut': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/04/barack-obama/obama-says-romneys-plan-5-trillion-tax-cut/', 
+      'The president said hed cut the deficit in half unfortunately he doubled it': 'http://www.politifact.com/new-jersey/statements/2012/oct/21/leonard-lance/barack-obama-broke-promise-cut-annual-deficit-half/',
+      'Ive put forward a specific  4 trillion deficit reduction plan': 'http://www.politifact.com/truth-o-meter/statements/2012/sep/07/barack-obama/obama-says-budget-plan-cut-deficits-4-trillion/',
+      'Now if you take such an unbalanced approach then that means you are going to be gutting our investments in schools': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/10/priorities-usa-action/super-pac-says-romney-takes-education-gives-millio/',
+      'And in one year you provided  90 billion in breaks to the green energy world': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/05/mitt-romney/mitt-romney-says-barack-obama-provided-90-billion/',
+      'It cuts  716 billion from Medicare to pay for it': 'http://www.politifact.com/florida/statements/2012/oct/30/cw-bill-young/bill-young-says-he-opposed-716-billion-medicare-cu/',
+      'I do not believe in cutting our military I believe in maintaining the strength of Americas military': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/05/barack-obama/obama-says-romney-would-spend-2-trilllion-military/',
+      'Production on government land of oil is down 14 percent': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/16/mitt-romney/mitt-romney-says-oil-production-down-14-percent-ye/',
+      'Governor Romney ... would plan to reduce the tax rates for all the tax brackets and ... eliminate some deductions in order to make up for the loss in revenue': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/15/paul-ryan/ryan-says-six-studies-say-math-works-romney-tax-pl/',
+      'Thats math that doesnt add up': 'http://www.politifact.com/truth-o-meter/statements/2012/aug/07/barack-obama/mitt-romney-would-add-trillions-deficit-while-obam/',
+      'Weve gone from  10 trillion of national debt to  16 trillion of national debt': 'http://www.politifact.com/wisconsin/statements/2012/sep/12/reid-ribble/president-obama-built-nations-16-trillion-debt-gop/' ,
+      'It took the president 14 days before he called the attack in Benghazi an act of terror': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/17/mitt-romney/romney-says-obama-waited-14-days-call-libya-attack/',
+      'He said behind closed doors that 47 percent of the country considers themselves victims who refuse personal responsibility': 'http://www.politifact.com/truth-o-meter/statements/2012/sep/18/mitt-romney/romney-says-47-percent-americans-pay-no-income-tax/',
+      'As a matter of fact Latin Americas economy is almost as big as the economy of China': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/23/mitt-romney/mitt-romney-says-latin-americas-economy-almost-big/',
+      'And then you cut education spending when you came into office': 'http://www.politifact.com/truth-o-meter/statements/2012/oct/08/barack-obama/obama-ad-accuses-romney-cutting-mass-k-12-educatio/'
+      };
+      var factsAndUrlsLength = 4;
+      var heightCnt = 0;
+      var heightInc = height/(numFacts*2);
+      for (var n = 0; n < texts.length; n++) {
+        var x = Math.random() * width/4;
+        var y = heightInc + heightInc*heightCnt
+        data.push({
+          text : texts[n],
+          color : colors[n],
+          x : x,
+          y : y
+        });
+        heightCnt++;
+      }
+      // render data
+      var nodeCount = 0;
+      var layer = new Kinetic.Layer();
+
+
+      for (var n = 0; n < data.length; n++) {
+
+        //addUrl(data[n], layer);
+        addText(data[n], layer);
+      }
+      stage.add(layer);
+      stage.add(topLayer);
+      stage.add(tooltipLayer);
+
+      stage.on('mouseover', function(evt) {
+        var node = evt.targetNode;
+        // update tooltip
+        var mousePos = node.getStage().getPointerPosition();
+        tooltip.setPosition(mousePos.x + 5, mousePos.y + 5);
+        //tooltip.setText("node: " + node.getId() + ", color: " + node.getFill());
+        //tooltip.show();
+        //tooltipLayer.draw();
+        node.setOpacity(1);
+        
+        layer.draw();
+      });
+
+      stage.on('dblclick', function(evt) {
+        var node = evt.targetNode;
+        var str = node.attrs.text;
+        var moo = factsAndUrls[node.attrs.text];
+        openNewBackgroundTab(factsAndUrls[node.attrs.text]);
+      });
+      
+      stage.on('mouseout', function(evt) {
+        tooltip.hide();
+        tooltipLayer.draw();
+        var node = evt.targetNode;
+        node.setOpacity(0.5);
+        layer.draw();
+      });
+
+    </script>
+  </body>
+</html>
